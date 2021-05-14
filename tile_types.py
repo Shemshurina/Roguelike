@@ -39,22 +39,27 @@ def new_tile( # def new_tile определяет тип плитки (walkable,
 
 # SHROUD отображает неисследованные, невидимые плитки
 # SHROUD используется для отрисовки черной плитки
-SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
+SHROUD = np.array((ord(" "), (255, 255, 255), (26,1,52)), dtype=graphic_dt)
 
 
 floor = new_tile(
     walkable=True, 
     transparent=True, 
-    dark=(ord(" "), (255, 255, 255), (128,0,0)), 
-    light=(ord(" "), (255, 255, 255), (255,179,164)), 
+    dark=(ord(" "), (255, 255, 255), (110,4,161)), 
+    light=(ord(" "), (255, 255, 255), (219,149,5)), 
 )
 wall = new_tile(
     walkable=False, 
     transparent=False,
-    dark=(ord(" "), (255, 255, 255), (54,0,0)), 
-    light=(ord(" "), (255, 255, 255), (140,105,99)),
+    dark=(ord(" "), (255, 255, 255), (87, 3, 128)),
+    light=(ord(" "), (255, 255, 255), (161,110,4)),
 )
 
-
+down_stairs = new_tile(
+   walkable=True,
+   transparent=True,
+   dark=(ord(">"), (0, 0, 100), (50, 50, 150)),
+   light=(ord(">"), (255, 255, 255), (200, 180, 50)),
+)
 
 

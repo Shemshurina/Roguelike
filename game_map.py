@@ -5,7 +5,7 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 import numpy as np  # type: ignore
 from tcod.console import Console
 
-from entity import Actor
+from entity import Actor, Item
 import tile_types
 
 if TYPE_CHECKING:
@@ -29,6 +29,12 @@ class GameMap:
             (width, height), fill_value=False, order="F"
         )  # Плитки, виденные ранее
 
+        self.downstairs_location = (0, 0)
+
+    @property
+    def gamemap(self) -> GameMap:
+        return self
+
     @property
     def actors(self) -> Iterator[Actor]:
         """Итерируется по actors карты."""
@@ -37,6 +43,10 @@ class GameMap:
             for entity in self.entities
             if isinstance(entity, Actor) and entity.is_alive
         )
+
+    @property
+    def items(self) -> Iterator[Item]:
+        yield from (entity for entity in self.entities if isinstance(entity, Item))
 
     def get_blocking_entity_at_location( #эта функция нужна, чтобы найти монстра, на которого наткнулся игрок
         self, location_x: int, location_y: int,
@@ -73,7 +83,7 @@ class GameMap:
         Во всех других случаях используется SHROUD (по дефолту) (черные плитки).
         """
         console.tiles_rgb[0 : self.width, 0 : self.height] = np.select( 
-# np.select позволяет отрисовывать плитки, которые мы хотим, описаясь на то, что указано в condlist
+# np.select позволяет отрисовывать плитки, которые мы хотим, опираясь на то, что указано в condlist
             condlist=[self.visible, self.explored],
             choicelist=[self.tiles["light"], self.tiles["dark"]],
             default=tile_types.SHROUD,
@@ -90,4 +100,49 @@ class GameMap:
                     x=entity.x, y=entity.y, string=entity.char, fg=entity.color
                 ) 
 
-                
+class GameWorld:
+    """
+    Содержит настройки для GameMap, и генерирует новые карты при передвижении по лестнице.
+    """
+
+    def __init__(
+        self,
+        *,
+        engine: Engine,
+        map_width: int,
+        map_height: int,
+        max_rooms: int,
+        room_min_size: int,
+        room_max_size: int,
+        current_floor: int = 0,
+        lvl: int
+    ):
+        self.engine = engine
+
+        self.map_width = map_width
+        self.map_height = map_height
+
+        self.max_rooms = max_rooms
+
+        self.room_min_size = room_min_size
+        self.room_max_size = room_max_size
+
+        self.current_floor = current_floor
+        self.lvl = lvl
+
+    def generate_floor(self) -> None:
+        from procgen import generate_spaceship
+
+        self.current_floor += 1
+
+        self.engine.game_map = generate_spaceship(
+            max_rooms=self.max_rooms,
+            room_min_size=self.room_min_size,
+            room_max_size=self.room_max_size,
+            map_width=self.map_width,
+            map_height=self.map_height,
+            engine=self.engine,
+            floor=self.current_floor,
+            lvl=self.lvl,
+        )
+

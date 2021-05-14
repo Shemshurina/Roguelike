@@ -1,44 +1,23 @@
-import copy
+import traceback
 
 import tcod
 
-from engine import Engine
-import entity_factories
-from procgen import generate_dungeon
+import color
+import exceptions
+import input_handlers
+import setup_game
 
 
 def main() -> None:
-    screen_width = 120
-    screen_height = 65
+    screen_width = 100
+    screen_height = 55
 
-    map_width = 120
-    map_height = 60 
-
-    room_max_size = 20 
-    room_min_size = 9 
-    max_rooms = 75 
-
-    max_monsters_per_room = 2
 
     tileset = tcod.tileset.load_tilesheet(
         "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
     )
 
-    player = copy.deepcopy(entity_factories.player) 
-   
-    engine = Engine(player=player) 
-
-    engine.game_map = generate_dungeon( 
-        max_rooms=max_rooms,
-        room_min_size=room_min_size,
-        room_max_size=room_max_size,
-        map_width=map_width,
-        map_height=map_height,
-        max_monsters_per_room=max_monsters_per_room,
-        engine=engine,
-        
-    ) 
-    engine.update_fov() 
+    handler: input_handlers.BaseEventHandler = setup_game.MainMenu()
     
     #создание окна игры:
     with tcod.context.new_terminal(
@@ -49,10 +28,25 @@ def main() -> None:
         vsync=True,
     ) as context:
         root_console = tcod.Console(screen_width, screen_height, order="F")
-        while True:
-            engine.render(console=root_console, context=context)
+        try:
+            while True:
+                root_console.clear()
+                handler.on_render(console=root_console)
+                context.present(root_console)
 
-            engine.event_handler.handle_events() 
+                try:
+                    for event in tcod.event.wait():
+                        context.convert_event(event)
+                        handler = handler.handle_events(event)
+                except Exception:  # Управляет исключениями в игре. 
+                    traceback.print_exc()  # Выводит ошибку в stderr.
+                    # Затем печатает ошибку в журнале сообщений (message_log).
+                    if isinstance(handler, input_handlers.EventHandler):
+                        handler.engine.message_log.add_message(
+                            traceback.format_exc(), color.error
+                        )
+        except exceptions.QuitWithoutSaving:
+            raise
             
 
 if __name__ == "__main__":
