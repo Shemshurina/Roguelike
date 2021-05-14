@@ -1,19 +1,19 @@
 # в этом файле лежит "искусственный интеллект", который обеспечивает способность монстров преследовать героя
 from __future__ import annotations
 
-from typing import List, Tuple, TYPE_CHECKING
+import random
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 import tcod
 
-from actions import Action, MeleeAction, MovementAction, WaitAction
-from components.base_component import BaseComponent
+from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
 
 if TYPE_CHECKING:
     from entity import Actor
 
 
-class BaseAI(Action, BaseComponent):
+class BaseAI(Action):
     entity: Actor
     
     def perform(self) -> None:
